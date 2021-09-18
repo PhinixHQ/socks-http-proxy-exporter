@@ -5,13 +5,17 @@ require("dotenv").config();
 const url = require("url");
 const client = require("prom-client");
 client.collectDefaultMetrics();
+
+// timeouts
 axios.defaults.timeout = parseInt(process.env.AXIOS_TIMEOUT);
+httpProxyTimeout = parseInt(process.env.HTTP_PROXY_TIMEOUT);
+socksProxyTimeout = parseInt(process.env.SOCKS_PROXY_TIMEOUT);
 // httpProxy
 const HttpsProxyAgent = require("https-proxy-agent");
 const https = require("https");
 // socksProxy
 const SocksProxyAgent = require("socks-proxy-agent");
-var rp = require("request-promise");
+var rp = require("request-promise");  
 // querystrings validation
 const Joi = require("joi");
 const validator = require("express-joi-validation").createValidator({});
@@ -21,17 +25,21 @@ const querySchema = Joi.object({
   proxyURL: Joi.string().required(),
 });
 
+
+
+//////////////////////
 async function scrapeWithHttpProxy(target, proxyHost, proxyPort, auth) {
   let httpsAgent = "";
   try {
     if (auth === null) {
-      httpsAgent = new HttpsProxyAgent({ host: proxyHost, port: proxyPort });
+      httpsAgent = new HttpsProxyAgent({ host: proxyHost, port: proxyPort , timeout: httpProxyTimeout});
     } else {
       let proxyAuth = `${auth.split(":")[0]}:${auth.split(":")[1]}`;
       httpsAgent = new HttpsProxyAgent({
         host: proxyHost,
         port: proxyPort,
         auth: proxyAuth,
+        timeout: httpProxyTimeout
       });
     }
     console.log("starting sending request through proxy");
@@ -52,13 +60,13 @@ async function scrapeWithSocksProxy(target, proxyHost, proxyPort) {
   try {
     var proxy = `socks5://${proxyHost}:${proxyPort}`;
     var agent = new SocksProxyAgent(proxy);
+    agent.timeout= socksProxyTimeout;
     var options = {
       uri: target,
       agent: agent,
       headers: {
         "User-Agent": "Request-Promise",
-      },
-      time: true,
+      }
     };
     console.log("starting sending request through socks proxy");
     var start = new Date();
@@ -75,9 +83,6 @@ async function scrapeWithSocksProxy(target, proxyHost, proxyPort) {
   }
 }
 
-function timeout(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 //app
 app.get("/probe", validator.query(querySchema), async (request, response) => {
@@ -116,7 +121,6 @@ app.get("/probe", validator.query(querySchema), async (request, response) => {
       queryProxyHost,
       queryProxyPort
     );
-    await timeout(10000);
   } else {
     return response.status(400).send("invalid proxy protocol found in proxyURL");
   }
