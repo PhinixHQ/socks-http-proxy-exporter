@@ -79,9 +79,9 @@ function timeout(ms) {
 }
 
 //app
-app.get("/probe", validator.query(querySchema), async (req, res) => {
-  let queryTarget = req.query.target;
-  let queryproxyURL = req.query.proxyURL;
+app.get("/probe", validator.query(querySchema), async (request, response) => {
+  let queryTarget = request.query.target;
+  let queryproxyURL = request.query.proxyURL;
   var q = url.parse(queryproxyURL, true);
 
   let queryProxyHost = q.hostname;
@@ -99,33 +99,32 @@ app.get("/probe", validator.query(querySchema), async (req, res) => {
     help: "duration of probe using the proxy",
   });
 
+  result = { proxy_probe_success: 0, proxy_probe_duration_seconds: 0 }
   if (q.protocol.split(":")[0] == "http") {
-    const res = await scrapeWithHttpProxy(
+    result = await scrapeWithHttpProxy(
       queryTarget,
       queryProxyHost,
       queryProxyPort,
       queryProxyAuth
     );
-    probeSuccessGuage.set(res.proxy_probe_success);
-    probeDurationGuage.set(res.proxy_probe_duration_seconds);
-    // console.log(res);
+
   } else if (q.protocol.split(":")[0] == "socks") {
-    const res = await scrapeWithSocksProxy(
+    result = await scrapeWithSocksProxy(
       queryTarget,
       queryProxyHost,
       queryProxyPort
     );
-    probeSuccessGuage.set(res.proxy_probe_success);
-    probeDurationGuage.set(res.proxy_probe_duration_seconds);
-    console.log(res);
     await timeout(10000);
   } else {
-    return res.status(400).send("invalid proxy protocol found in proxyURL");
+    return response.status(400).send("invalid proxy protocol found in proxyURL");
   }
+
+  probeSuccessGuage.set(result.proxy_probe_success);
+  probeDurationGuage.set(result.proxy_probe_duration_seconds);
 
   metrics = await client.register.metrics();
   // client.register.clear();
-  return res.status(200).send(metrics);
+  return response.status(200).send(metrics);
 });
 
 app.listen(process.env.LISTEN_PORT, () =>
