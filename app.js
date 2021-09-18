@@ -4,6 +4,7 @@ const app = express();
 require("dotenv").config();
 const url = require("url");
 const client = require("prom-client");
+client.collectDefaultMetrics();
 axios.defaults.timeout = parseInt(process.env.AXIOS_TIMEOUT);
 // httpProxy
 const HttpsProxyAgent = require("https-proxy-agent");
@@ -124,6 +125,10 @@ app.get("/probe", validator.query(querySchema), async (request, response) => {
   probeDurationGuage.set(result.proxy_probe_duration_seconds);
 
   return response.status(200).send(await registry.metrics());
+});
+
+app.get("/metrics", async (request, response) => {
+  return response.status(200).send(await client.register.metrics());
 });
 
 app.listen(process.env.LISTEN_PORT, () =>
