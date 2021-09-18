@@ -3,7 +3,7 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const url = require("url");
-let client = require("prom-client");
+
 axios.defaults.timeout = parseInt(process.env.AXIOS_TIMEOUT);
 // httpProxy
 const HttpsProxyAgent = require("https-proxy-agent");
@@ -18,15 +18,6 @@ const validator = require("express-joi-validation").createValidator({});
 const querySchema = Joi.object({
   target: Joi.string().required(),
   proxyURL: Joi.string().required(),
-});
-// Gauges
-let probeSuccessGuage = new client.Gauge({
-  name: "proxy_probe_kia",
-  help: "status of proxy server",
-});
-let probeDurationGuage = new client.Gauge({
-  name: "proxy_probe_ducration_seconds",
-  help: "response time of proxy server",
 });
 
 async function scrapeWithHttpProxy(target, proxyHost, proxyPort, auth) {
@@ -96,6 +87,17 @@ app.get("/probe", validator.query(querySchema), async (req, res) => {
   let queryProxyHost = q.hostname;
   let queryProxyPort = q.port;
   let queryProxyAuth = q.auth;
+
+  let client = require("prom-client");
+
+  let probeSuccessGuage = new client.Gauge({
+    name: "proxy_probe_success",
+    help: "whether probe was successful or not",
+  });
+  let probeDurationGuage = new client.Gauge({
+    name: "proxy_probe_ducration_seconds",
+    help: "duration of probe using the proxy",
+  });
 
   if (q.protocol.split(":")[0] == "http") {
     const res = await scrapeWithHttpProxy(
