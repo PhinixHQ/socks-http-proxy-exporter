@@ -118,7 +118,7 @@ app.get("/probe", validator.query(querySchema), async (req, res) => {
     console.log(res);
     await timeout(10000);
   } else {
-    return res.status(400).send("invalde proxy protocol found in proxyURL");
+    return res.status(400).send("invalid proxy protocol found in proxyURL");
   }
 
   metrics = await client.register.metrics();
