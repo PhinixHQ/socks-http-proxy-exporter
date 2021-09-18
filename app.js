@@ -3,7 +3,7 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const url = require("url");
-
+const client = require("prom-client");
 axios.defaults.timeout = parseInt(process.env.AXIOS_TIMEOUT);
 // httpProxy
 const HttpsProxyAgent = require("https-proxy-agent");
@@ -88,15 +88,16 @@ app.get("/probe", validator.query(querySchema), async (request, response) => {
   let queryProxyPort = q.port;
   let queryProxyAuth = q.auth;
 
-  let client = require("prom-client");
-
+  let registry = new client.Registry();
   let probeSuccessGuage = new client.Gauge({
     name: "proxy_probe_success",
     help: "whether probe was successful or not",
+    registers: [registry]
   });
   let probeDurationGuage = new client.Gauge({
     name: "proxy_probe_ducration_seconds",
     help: "duration of probe using the proxy",
+    registers: [registry]
   });
 
   result = { proxy_probe_success: 0, proxy_probe_duration_seconds: 0 }
@@ -122,13 +123,11 @@ app.get("/probe", validator.query(querySchema), async (request, response) => {
   probeSuccessGuage.set(result.proxy_probe_success);
   probeDurationGuage.set(result.proxy_probe_duration_seconds);
 
-  metrics = await client.register.metrics();
-  // client.register.clear();
-  return response.status(200).send(metrics);
+  return response.status(200).send(await registry.metrics());
 });
 
 app.listen(process.env.LISTEN_PORT, () =>
   console.log(
-    "Server is running and metrics are exposed on http://URL:3000/metrics"
+    `Server is running and metrics are exposed on http://:${process.env.LISTEN_PORT}/metrics`
   )
 );
