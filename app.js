@@ -42,16 +42,16 @@ async function scrapeWithHttpProxy(target, proxyHost, proxyPort, auth) {
         timeout: httpProxyTimeout
       });
     }
-    console.log("starting sending request through proxy");
+    // console.log("starting sending request through proxy");
     start = new Date();
     const proxyRes = await axios.get(target, { httpsAgent });
     var duration = new Date() - start;
-    console.log("finished sending request through http proxy");
-    console.log("///////////////////////////////////////////");
+    // console.log("finished sending request through http proxy");
+    // console.log("///////////////////////////////////////////");
     return { proxy_probe_success: 1, proxy_probe_duration_seconds: duration };
   } catch (e) {
     console.log(e);
-    console.log("error on http proxy connection");
+    // console.log("error on http proxy connection");
     return { proxy_probe_success: 0, proxy_probe_duration_seconds: 0 };
   }
 }
@@ -68,17 +68,17 @@ async function scrapeWithSocksProxy(target, proxyHost, proxyPort) {
         "User-Agent": "Request-Promise",
       }
     };
-    console.log("starting sending request through socks proxy");
+    // console.log("starting sending request through socks proxy");
     var start = new Date();
     const socksProxyRes = await rp(options);
     var duration = new Date() - start;
 
-    console.log("finished sending request through socks proxy");
-    console.log("///////////////////////////////////////////");
+    // console.log("finished sending request through socks proxy");
+    // console.log("///////////////////////////////////////////");
     return { proxy_probe_success: 1, proxy_probe_duration_seconds: duration };
   } catch (e) {
     console.log(e);
-    console.log("error on socks proxy connection");
+    // console.log("error on socks proxy connection");
     return { proxy_probe_success: 0, proxy_probe_duration_seconds: 0 };
   }
 }
