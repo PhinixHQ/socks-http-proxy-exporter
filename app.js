@@ -59,20 +59,12 @@ async function scrapeWithHttpProxy(target, proxyHost, proxyPort, auth) {
 async function scrapeWithSocksProxy(target, proxyHost, proxyPort) {
   try {
     var proxy = `socks5://${proxyHost}:${proxyPort}`;
-    var agent = new SocksProxyAgent(proxy);
-    agent.timeout= socksProxyTimeout;
-    var options = {
-      uri: target,
-      agent: agent,
-      headers: {
-        "User-Agent": "Request-Promise",
-      }
-    };
+    var socksagent = new SocksProxyAgent(proxy);
     // console.log("starting sending request through socks proxy");
     var start = new Date();
-    const socksProxyRes = await rp(options);
+    const res = await axios.get(target, {httpAgent: socksagent})
     var duration = new Date() - start;
-
+    
     // console.log("finished sending request through socks proxy");
     // console.log("///////////////////////////////////////////");
     return { proxy_probe_success: 1, proxy_probe_duration_seconds: duration };
