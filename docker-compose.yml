@@ -7,4 +7,6 @@ services:
       AXIOS_TIMEOUT: "8000"
       HTTP_PROXY_TIMEOUT: "8000"
       SOCKS_PROXY_TIMEOUT: "8000"
+      SENTRY_DSN:
+      SCOPE:
     network_mode: "host"

@@ -5,6 +5,14 @@ require("dotenv").config();
 const url = require("url");
 const client = require("prom-client");
 client.collectDefaultMetrics();
+const Sentry = require('@sentry/node');
+
+// Sentry
+Sentry.init({ dsn: process.env.SENTRY_DSN });
+Sentry.configureScope(scope => {
+    scope.setTag('coin', process.env.COIN_NAME);
+    scope.setTag('scope', process.env.SCOPE);
+  });
 
 // timeouts
 axios.defaults.timeout = parseInt(process.env.AXIOS_TIMEOUT);
@@ -50,6 +58,7 @@ async function scrapeWithHttpProxy(target, proxyHost, proxyPort, auth) {
     // console.log("///////////////////////////////////////////");
     return { proxy_probe_success: 1, proxy_probe_duration_seconds: duration };
   } catch (e) {
+    Sentry.captureException(e);
     console.log(e);
     // console.log("error on http proxy connection");
     return { proxy_probe_success: 0, proxy_probe_duration_seconds: 0 };
@@ -69,6 +78,7 @@ async function scrapeWithSocksProxy(target, proxyHost, proxyPort) {
     // console.log("///////////////////////////////////////////");
     return { proxy_probe_success: 1, proxy_probe_duration_seconds: duration };
   } catch (e) {
+    Sentry.captureException(e);
     console.log(e);
     // console.log("error on socks proxy connection");
     return { proxy_probe_success: 0, proxy_probe_duration_seconds: 0 };
